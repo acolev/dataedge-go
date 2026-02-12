@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	dataedge "gitlab.com/dataedgemd/go-sdk"
+	"github.com/acolev/dataedge-go"
 )
 
 func main() {

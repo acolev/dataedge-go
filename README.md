@@ -5,7 +5,7 @@ This is a Go client library for the [DataEdge](https://dataedge.md) API, providi
 ## Installation
 
 ```bash
-go get gitlab.com/dataedgemd/go-sdk
+go get github.com/acolev/dataedge-go
 ```
 
 ## Usage
@@ -18,7 +18,7 @@ package main
 import (
     "context"
     "fmt"
-    "gitlab.com/dataedgemd/go-sdk"
+    "github.com/acolev/dataedge-go"
 )
 
 func main() {
