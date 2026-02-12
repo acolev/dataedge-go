@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-    client := dataedge.NewClient("YOUR_API_TOKEN")
+    client := dataedge.NewClient("YOUR_API_TOKEN", dataedge.WithDebug(true))
     
     // Create service instances
     smsService := dataedge.NewSmsService(client)
