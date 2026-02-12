@@ -27,14 +27,16 @@ func (s *SmsService) GetBalance(ctx context.Context) (float64, error) {
 		return 0, err
 	}
 
-	// The API might return {"balance": "100.50"} (string) or {"balance": 100.50} (number)
-	// We use a custom struct to handle both or just try to unmarshal.
+	// The API returns: {"status":"OK","currency":"EUR","result":[{"balance":18.62}]}
 	var result struct {
-		Balance interface{} `json:"balance"`
+		Status string `json:"status"`
+		Result []struct {
+			Balance interface{} `json:"balance"`
+		} `json:"result"`
 	}
 
-	if err := json.Unmarshal(resp, &result); err == nil {
-		switch v := result.Balance.(type) {
+	if err := json.Unmarshal(resp, &result); err == nil && len(result.Result) > 0 {
+		switch v := result.Result[0].Balance.(type) {
 		case float64:
 			return v, nil
 		case string:
@@ -47,13 +49,23 @@ func (s *SmsService) GetBalance(ctx context.Context) (float64, error) {
 		}
 	}
 
-	// Fallback: try to parse the whole body as a number
-	var balance float64
-	if err := json.Unmarshal(resp, &balance); err == nil {
-		return balance, nil
+	// Fallback/Legacy: try to parse the whole body as a number or the old flat structure
+	var legacy struct {
+		Balance interface{} `json:"balance"`
+	}
+	if err := json.Unmarshal(resp, &legacy); err == nil && legacy.Balance != nil {
+		switch v := legacy.Balance.(type) {
+		case float64:
+			return v, nil
+		case string:
+			var f float64
+			if _, err := fmt.Sscanf(v, "%f", &f); err == nil {
+				return f, nil
+			}
+		}
 	}
 
-	return 0, fmt.Errorf("failed to parse balance from response: %s (error: %v)", string(resp), err)
+	return 0, fmt.Errorf("failed to parse balance from response: %s", string(resp))
 }
 
 // GetLimit returns the current limit.
