@@ -41,7 +41,7 @@ func main() {
 
 ```go
 // Send a quick SMS (without creating it first)
-result, err := smsService.SendQuickSms(context.Background(), "Hello World", "373xxxxxxxxx", true)
+result, err := smsService.SendQuickSms(context.Background(), "Hello World", "373xxxxxxxxx", 0, true)
 if err != nil {
     panic(err)
 }

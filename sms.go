@@ -147,7 +147,7 @@ func (s *SmsService) SendSms(ctx context.Context, messageID int, phone string) (
 }
 
 // SendQuickSms sends an SMS without creating it first.
-func (s *SmsService) SendQuickSms(ctx context.Context, message string, phone string, translit bool) (interface{}, error) {
+func (s *SmsService) SendQuickSms(ctx context.Context, message string, phone string, alphaNameID int, translit bool) (interface{}, error) {
 	if message == "" || phone == "" {
 		return nil, fmt.Errorf("message and phone are required")
 	}
@@ -158,6 +158,9 @@ func (s *SmsService) SendQuickSms(ctx context.Context, message string, phone str
 	}
 	if translit {
 		params["message"] = Transliterate(message)
+	}
+	if alphaNameID > 0 {
+		params["alphaname_id"] = alphaNameID
 	}
 
 	resp, err := s.client.sendRequest(ctx, http.MethodGet, "sendQuickSms", params, "")
