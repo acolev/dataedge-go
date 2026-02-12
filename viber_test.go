@@ -44,10 +44,10 @@ func TestViberService_SendQuickViberMessage(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewClient("token", WithBaseURL(ts.URL+"/api/v"))
+	client := NewClient("token", WithBaseURL(ts.URL+"/api/v"), WithTranslit(true))
 	viber := NewViberService(client)
-
-	_, err := viber.SendQuickViberMessage(context.Background(), "375290000000", 1, "Hello")
+	// Test with defaults from client
+	_, err := viber.SendQuickViberMessage(context.Background(), "375290000000", "Hello")
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}

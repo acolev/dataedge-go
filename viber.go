@@ -19,15 +19,10 @@ func NewViberService(client *Client) *ViberService {
 }
 
 // CreateViberMessage creates a new Viber message template.
-func (s *ViberService) CreateViberMessage(ctx context.Context, message string, viberNameID int) (interface{}, error) {
-	id := viberNameID
-	if id == 0 {
-		id = s.client.defaultViberNameID
-	}
-
+func (s *ViberService) CreateViberMessage(ctx context.Context, message string) (interface{}, error) {
 	params := map[string]interface{}{
 		"message":      message,
-		"vibername_id": id,
+		"vibername_id": s.client.viberNameID,
 	}
 
 	resp, err := s.client.sendRequest(ctx, http.MethodPost, "createViberMessage", params, "")
@@ -63,15 +58,10 @@ func (s *ViberService) SendViberMessage(ctx context.Context, phone string, viber
 }
 
 // SendQuickViberMessage sends a Viber message without creating it first.
-func (s *ViberService) SendQuickViberMessage(ctx context.Context, phone string, viberNameID int, message string) (interface{}, error) {
-	id := viberNameID
-	if id == 0 {
-		id = s.client.defaultViberNameID
-	}
-
+func (s *ViberService) SendQuickViberMessage(ctx context.Context, phone string, message string) (interface{}, error) {
 	params := map[string]interface{}{
 		"phone":        phone,
-		"vibername_id": id,
+		"vibername_id": s.client.viberNameID,
 		"message":      message,
 	}
 
@@ -89,18 +79,13 @@ func (s *ViberService) SendQuickViberMessage(ctx context.Context, phone string, 
 
 // SendQuickViberMessageWithImage sends a Viber message with an image.
 // This function handles multipart form data upload.
-func (s *ViberService) SendQuickViberMessageWithImage(ctx context.Context, phone string, viberNameID int, message string, typeMessage string, imagePath string, buttonText string, buttonLink string) (interface{}, error) {
+func (s *ViberService) SendQuickViberMessageWithImage(ctx context.Context, phone string, message string, typeMessage string, imagePath string, buttonText string, buttonLink string) (interface{}, error) {
 	// PHP passes `v=2` explicitly here.
 	v := "2"
 
-	id := viberNameID
-	if id == 0 {
-		id = s.client.defaultViberNameID
-	}
-
 	fields := map[string]string{
 		"phone":        phone,
-		"vibername_id": fmt.Sprintf("%d", id),
+		"vibername_id": fmt.Sprintf("%d", s.client.viberNameID),
 		"message":      message,
 		"type_message": typeMessage,
 	}
@@ -136,15 +121,10 @@ func (s *ViberService) SendQuickViberMessageWithImage(ctx context.Context, phone
 }
 
 // SendViberMessageList sends a predictable Viber message list.
-func (s *ViberService) SendViberMessageList(ctx context.Context, name string, viberNameID int, listID int, dSchedule string, extraParams map[string]interface{}) (interface{}, error) {
-	id := viberNameID
-	if id == 0 {
-		id = s.client.defaultViberNameID
-	}
-
+func (s *ViberService) SendViberMessageList(ctx context.Context, name string, listID int, dSchedule string, extraParams map[string]interface{}) (interface{}, error) {
 	params := map[string]interface{}{
 		"name":         name,
-		"vibername_id": id,
+		"vibername_id": s.client.viberNameID,
 		"list_id":      listID,
 		"d_schedule":   dSchedule,
 	}

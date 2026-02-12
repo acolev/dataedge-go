@@ -50,8 +50,8 @@ func TestSmsService_CreateSMSMessage(t *testing.T) {
 	client := NewClient("test-token", WithBaseURL(ts.URL+"/api/v"))
 	sms := NewSmsService(client)
 
-	// Test with transliteration
-	id, err := sms.CreateSMSMessage(context.Background(), "Привет", 0, true)
+	// Test with defaults from client
+	id, err := sms.CreateSMSMessage(context.Background(), "Привет")
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}

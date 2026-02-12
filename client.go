@@ -22,12 +22,13 @@ const (
 
 // Client is the DataEdge API client.
 type Client struct {
-	baseURL            string
-	token              string
-	httpClient         *http.Client
-	debug              bool
-	defaultAlphaNameID int
-	defaultViberNameID int
+	baseURL     string
+	token       string
+	httpClient  *http.Client
+	debug       bool
+	alphaNameID int
+	viberNameID int
+	translit    bool
 }
 
 // Option is a functional option for configuring the Client.
@@ -47,17 +48,24 @@ func WithBaseURL(url string) Option {
 	}
 }
 
-// WithDefaultAlphaNameID sets the default alpha name ID for SMS.
-func WithDefaultAlphaNameID(id int) Option {
+// WithAlphaNameID sets the default alpha name ID for SMS.
+func WithAlphaNameID(id int) Option {
 	return func(c *Client) {
-		c.defaultAlphaNameID = id
+		c.alphaNameID = id
 	}
 }
 
-// WithDefaultViberNameID sets the default viber name ID for Viber.
-func WithDefaultViberNameID(id int) Option {
+// WithViberNameID sets the default viber name ID for Viber.
+func WithViberNameID(id int) Option {
 	return func(c *Client) {
-		c.defaultViberNameID = id
+		c.viberNameID = id
+	}
+}
+
+// WithTranslit enables or disables auto-transliteration by default.
+func WithTranslit(translit bool) Option {
+	return func(c *Client) {
+		c.translit = translit
 	}
 }
 
@@ -71,8 +79,9 @@ func WithHTTPClient(client *http.Client) Option {
 // NewClient creates a new DataEdge API client.
 func NewClient(token string, opts ...Option) *Client {
 	c := &Client{
-		baseURL: defaultBaseURL,
-		token:   token,
+		baseURL:  defaultBaseURL,
+		token:    token,
+		translit: true, // Default to true like in PHP SDK
 		httpClient: &http.Client{
 			Timeout: 20 * time.Second,
 		},

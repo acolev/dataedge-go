@@ -92,21 +92,16 @@ func (s *SmsService) GetLimit(ctx context.Context) (int, error) {
 }
 
 // CreateSMSMessage creates a new SMS message.
-func (s *SmsService) CreateSMSMessage(ctx context.Context, message string, alphaNameID int, translit bool) (int, error) {
+func (s *SmsService) CreateSMSMessage(ctx context.Context, message string) (int, error) {
 	params := map[string]interface{}{
 		"message": message,
 	}
-	if translit {
+	if s.client.translit {
 		params["message"] = Transliterate(message)
 	}
 
-	id := alphaNameID
-	if id == 0 {
-		id = s.client.defaultAlphaNameID
-	}
-
-	if id > 0 {
-		params["alphaname_id"] = id
+	if s.client.alphaNameID > 0 {
+		params["alphaname_id"] = s.client.alphaNameID
 	}
 
 	resp, err := s.client.sendRequest(ctx, http.MethodGet, "createSmsMessage", params, "")
@@ -153,7 +148,7 @@ func (s *SmsService) SendSms(ctx context.Context, messageID int, phone string) (
 }
 
 // SendQuickSms sends an SMS without creating it first.
-func (s *SmsService) SendQuickSms(ctx context.Context, message string, phone string, alphaNameID int, translit bool) (interface{}, error) {
+func (s *SmsService) SendQuickSms(ctx context.Context, message string, phone string) (interface{}, error) {
 	if message == "" || phone == "" {
 		return nil, fmt.Errorf("message and phone are required")
 	}
@@ -162,17 +157,12 @@ func (s *SmsService) SendQuickSms(ctx context.Context, message string, phone str
 		"message": message,
 		"phone":   phone,
 	}
-	if translit {
+	if s.client.translit {
 		params["message"] = Transliterate(message)
 	}
 
-	id := alphaNameID
-	if id == 0 {
-		id = s.client.defaultAlphaNameID
-	}
-
-	if id > 0 {
-		params["alphaname_id"] = id
+	if s.client.alphaNameID > 0 {
+		params["alphaname_id"] = s.client.alphaNameID
 	}
 
 	resp, err := s.client.sendRequest(ctx, http.MethodGet, "sendQuickSms", params, "")

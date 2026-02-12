@@ -47,7 +47,7 @@ func main() {
 	   fmt.Println("\n--- Sending Quick SMS ---")
 	   phone := "373xxxxxxxxx" // Replace with real number
 	   msg := "Hello from Go SDK!"
-	   resp, err := smsService.SendQuickSms(ctx, msg, phone, true)
+	   resp, err := smsService.SendQuickSms(ctx, msg, phone)
 	   if err != nil {
 	       log.Printf("Error sending SMS: %v\n", err)
 	   } else {
@@ -60,9 +60,8 @@ func main() {
 	/*
 	   fmt.Println("\n--- Sending Viber Message ---")
 	   viberPhone := "373xxxxxxxxx" // Replace
-	   viberID := 123 // Replace with valid Viber Name ID
 	   viberMsg := "Hello from Go SDK via Viber"
-	   vResp, err := viberService.SendQuickViberMessage(ctx, viberPhone, viberID, viberMsg)
+	   vResp, err := viberService.SendQuickViberMessage(ctx, viberPhone, viberMsg)
 	   if err != nil {
 	       log.Printf("Error sending Viber message: %v\n", err)
 	   } else {
