@@ -99,8 +99,14 @@ func (s *SmsService) CreateSMSMessage(ctx context.Context, message string, alpha
 	if translit {
 		params["message"] = Transliterate(message)
 	}
-	if alphaNameID > 0 {
-		params["alphaname_id"] = alphaNameID
+
+	id := alphaNameID
+	if id == 0 {
+		id = s.client.defaultAlphaNameID
+	}
+
+	if id > 0 {
+		params["alphaname_id"] = id
 	}
 
 	resp, err := s.client.sendRequest(ctx, http.MethodGet, "createSmsMessage", params, "")
@@ -159,8 +165,14 @@ func (s *SmsService) SendQuickSms(ctx context.Context, message string, phone str
 	if translit {
 		params["message"] = Transliterate(message)
 	}
-	if alphaNameID > 0 {
-		params["alphaname_id"] = alphaNameID
+
+	id := alphaNameID
+	if id == 0 {
+		id = s.client.defaultAlphaNameID
+	}
+
+	if id > 0 {
+		params["alphaname_id"] = id
 	}
 
 	resp, err := s.client.sendRequest(ctx, http.MethodGet, "sendQuickSms", params, "")

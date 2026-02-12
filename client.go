@@ -22,10 +22,12 @@ const (
 
 // Client is the DataEdge API client.
 type Client struct {
-	baseURL    string
-	token      string
-	httpClient *http.Client
-	debug      bool
+	baseURL            string
+	token              string
+	httpClient         *http.Client
+	debug              bool
+	defaultAlphaNameID int
+	defaultViberNameID int
 }
 
 // Option is a functional option for configuring the Client.
@@ -42,6 +44,20 @@ func WithDebug(debug bool) Option {
 func WithBaseURL(url string) Option {
 	return func(c *Client) {
 		c.baseURL = url
+	}
+}
+
+// WithDefaultAlphaNameID sets the default alpha name ID for SMS.
+func WithDefaultAlphaNameID(id int) Option {
+	return func(c *Client) {
+		c.defaultAlphaNameID = id
+	}
+}
+
+// WithDefaultViberNameID sets the default viber name ID for Viber.
+func WithDefaultViberNameID(id int) Option {
+	return func(c *Client) {
+		c.defaultViberNameID = id
 	}
 }
 

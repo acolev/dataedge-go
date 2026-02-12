@@ -20,9 +20,14 @@ func NewViberService(client *Client) *ViberService {
 
 // CreateViberMessage creates a new Viber message template.
 func (s *ViberService) CreateViberMessage(ctx context.Context, message string, viberNameID int) (interface{}, error) {
+	id := viberNameID
+	if id == 0 {
+		id = s.client.defaultViberNameID
+	}
+
 	params := map[string]interface{}{
 		"message":      message,
-		"vibername_id": viberNameID,
+		"vibername_id": id,
 	}
 
 	resp, err := s.client.sendRequest(ctx, http.MethodPost, "createViberMessage", params, "")
@@ -59,9 +64,14 @@ func (s *ViberService) SendViberMessage(ctx context.Context, phone string, viber
 
 // SendQuickViberMessage sends a Viber message without creating it first.
 func (s *ViberService) SendQuickViberMessage(ctx context.Context, phone string, viberNameID int, message string) (interface{}, error) {
+	id := viberNameID
+	if id == 0 {
+		id = s.client.defaultViberNameID
+	}
+
 	params := map[string]interface{}{
 		"phone":        phone,
-		"vibername_id": viberNameID,
+		"vibername_id": id,
 		"message":      message,
 	}
 
@@ -83,9 +93,14 @@ func (s *ViberService) SendQuickViberMessageWithImage(ctx context.Context, phone
 	// PHP passes `v=2` explicitly here.
 	v := "2"
 
+	id := viberNameID
+	if id == 0 {
+		id = s.client.defaultViberNameID
+	}
+
 	fields := map[string]string{
 		"phone":        phone,
-		"vibername_id": fmt.Sprintf("%d", viberNameID),
+		"vibername_id": fmt.Sprintf("%d", id),
 		"message":      message,
 		"type_message": typeMessage,
 	}
@@ -122,9 +137,14 @@ func (s *ViberService) SendQuickViberMessageWithImage(ctx context.Context, phone
 
 // SendViberMessageList sends a predictable Viber message list.
 func (s *ViberService) SendViberMessageList(ctx context.Context, name string, viberNameID int, listID int, dSchedule string, extraParams map[string]interface{}) (interface{}, error) {
+	id := viberNameID
+	if id == 0 {
+		id = s.client.defaultViberNameID
+	}
+
 	params := map[string]interface{}{
 		"name":         name,
-		"vibername_id": viberNameID,
+		"vibername_id": id,
 		"list_id":      listID,
 		"d_schedule":   dSchedule,
 	}

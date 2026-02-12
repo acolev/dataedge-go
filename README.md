@@ -22,13 +22,19 @@ import (
 )
 
 func main() {
-    client := dataedge.NewClient("YOUR_API_TOKEN", dataedge.WithDebug(true))
+    // Initialize client with defaults
+    client := dataedge.NewClient(
+        "YOUR_API_TOKEN",
+        dataedge.WithDebug(true),
+        dataedge.WithDefaultAlphaNameID(123), // Set default sender ID
+    )
     
     // Create service instances
     smsService := dataedge.NewSmsService(client)
     viberService := dataedge.NewViberService(client)
     
-    // Check balance
+    // Now you can call SendQuickSms with 0 as alphaNameID to use the default
+    result, err := smsService.SendQuickSms(context.Background(), "Hello World", "373xxxxxxxxx", 0, true)
     balance, err := smsService.GetBalance(context.Background())
     if err != nil {
         panic(err)
