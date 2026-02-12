@@ -1,0 +1,87 @@
+# DataEdge Go SDK
+
+This is a Go client library for the [DataEdge](https://dataedge.md) API, providing a full-featured and type-safe interface for SMS and Viber messaging services. It is a port of the official [PHP SDK](https://gitlab.com/dataedgemd/php-sdk).
+
+## Installation
+
+```bash
+go get gitlab.com/dataedgemd/go-sdk
+```
+
+## Usage
+
+### Initialization
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "gitlab.com/dataedgemd/go-sdk"
+)
+
+func main() {
+    client := dataedge.NewClient("YOUR_API_TOKEN")
+    
+    // Create service instances
+    smsService := dataedge.NewSmsService(client)
+    viberService := dataedge.NewViberService(client)
+    
+    // Check balance
+    balance, err := smsService.GetBalance(context.Background())
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("Balance: %.2f\n", balance)
+}
+```
+
+### Sending SMS
+
+```go
+// Send a quick SMS (without creating it first)
+result, err := smsService.SendQuickSms(context.Background(), "Hello World", "373xxxxxxxxx", true)
+if err != nil {
+    panic(err)
+}
+fmt.Println("SMS Sent:", result)
+
+// Create and Send
+msgID, err := smsService.CreateSMSMessage(context.Background(), "Hello World", 0, true)
+if err != nil {
+    panic(err)
+}
+res, err := smsService.SendSms(context.Background(), msgID, "373xxxxxxxxx")
+```
+
+### Sending Viber Messages
+
+```go
+// Send quick Viber message
+res, err := viberService.SendQuickViberMessage(context.Background(), "373xxxxxxxxx", 123, "Hello Viber")
+
+// Send Viber message with image
+res, err = viberService.SendQuickViberMessageWithImage(
+    context.Background(),
+    "373xxxxxxxxx",
+    123,
+    "Hello with Image",
+    "IMAGE",
+    "/path/to/image.jpg",
+    "Button Text",
+    "https://example.com",
+)
+```
+
+## Features
+
+- **Full API Coverage**: Supports all methods from the PHP SDK.
+- **Context Support**: All methods accept `context.Context` for timeout and cancellation control.
+- **Type Safety**: Uses Go structs and error handling.
+- **Transliteration**: Built-in support for Cyrillic to Latin transliteration.
+- **Multipart Upload**: Support for creating Viber messages with images.
+
+## License
+
+MIT
