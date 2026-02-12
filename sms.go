@@ -27,26 +27,33 @@ func (s *SmsService) GetBalance(ctx context.Context) (float64, error) {
 		return 0, err
 	}
 
-	// PHP returns "float" directly? Or JSON object?
-	// `return $this->sendRequest("getBalance");`
-	// If API returns JSON like `{"balance": 100.50}`, we parse it.
-	// If it returns raw string, we parse it.
-	// Let's assume JSON object for now based on standard REST APIs.
+	// The API might return {"balance": "100.50"} (string) or {"balance": 100.50} (number)
+	// We use a custom struct to handle both or just try to unmarshal.
 	var result struct {
-		Balance float64 `json:"balance"`
-	}
-	// Try parsing as struct
-	if err := json.Unmarshal(resp, &result); err == nil {
-		return result.Balance, nil
+		Balance interface{} `json:"balance"`
 	}
 
-	// Fallback: maybe it returns just the number?
+	if err := json.Unmarshal(resp, &result); err == nil {
+		switch v := result.Balance.(type) {
+		case float64:
+			return v, nil
+		case string:
+			var f float64
+			if _, err := fmt.Sscanf(v, "%f", &f); err == nil {
+				return f, nil
+			}
+		case int:
+			return float64(v), nil
+		}
+	}
+
+	// Fallback: try to parse the whole body as a number
 	var balance float64
 	if err := json.Unmarshal(resp, &balance); err == nil {
 		return balance, nil
 	}
 
-	return 0, fmt.Errorf("unexpected response format: %s", string(resp))
+	return 0, fmt.Errorf("failed to parse balance from response: %s (error: %v)", string(resp), err)
 }
 
 // GetLimit returns the current limit.

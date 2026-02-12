@@ -25,10 +25,18 @@ type Client struct {
 	baseURL    string
 	token      string
 	httpClient *http.Client
+	debug      bool
 }
 
 // Option is a functional option for configuring the Client.
 type Option func(*Client)
+
+// WithDebug enables or disables debug logging.
+func WithDebug(debug bool) Option {
+	return func(c *Client) {
+		c.debug = debug
+	}
+}
 
 // WithBaseURL sets a custom base URL for the client.
 func WithBaseURL(url string) Option {
@@ -186,6 +194,13 @@ func (c *Client) sendRequest(ctx context.Context, method, command string, params
 	// We will handle that in the specific service method or a helper, but `sendRequest` generic might need to support it.
 	// For now, let's keep `sendRequest` simple for standard params.
 
+	if c.debug {
+		fmt.Printf("[DEBUG] Request: %s %s\n", method, reqURL)
+		if contentType != "" {
+			fmt.Printf("[DEBUG] Content-Type: %s\n", contentType)
+		}
+	}
+
 	req, err := http.NewRequestWithContext(ctx, strings.ToUpper(method), reqURL, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -204,6 +219,11 @@ func (c *Client) sendRequest(ctx context.Context, method, command string, params
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if c.debug {
+		fmt.Printf("[DEBUG] Response Status: %s\n", resp.Status)
+		fmt.Printf("[DEBUG] Response Body: %s\n", string(respBody))
 	}
 
 	// Check logical error in JSON
