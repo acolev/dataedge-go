@@ -127,65 +127,7 @@ func (c *Client) sendRequest(ctx context.Context, method, command string, params
 		reqURL = u.String()
 	} else {
 		// POST request
-		reqURL = fmt.Sprintf("%s%s", c.baseURL, command) // Note: POST requests in PHP SDK didn't seem to use version in URL path based on logic: $url = $this->API_URL . $command; (line 22)
-		// Wait, line 16: $url = $this->API_URL . $v . '/' . $command ... (GET)
-		// Line 22: $url = $this->API_URL . $command; (POST/non-GET)
-		// PHP SDK creates API_URL = "https://app.dataedge.md/api/v"
-		// So GET becomes https://app.dataedge.md/api/v1/command
-		// POST becomes https://app.dataedge.md/api/vcommand ... wait, that looks like a bug in PHP SDK or I misread it.
-		// Let's re-read PHP Client.php carefully.
-		// Line 11: private $API_URL = "https://app.dataedge.md/api/v";
-		// Line 16: $url = $this->API_URL . $v . '/' . $command ... -> https://app.dataedge.md/api/v1/command
-		// Line 22: $url = $this->API_URL . $command; -> https://app.dataedge.md/api/vcommand (MISSING SLASH!)
-		// However, maybe $command starts with a slash?
-		// In SmsService.php: $this->sendRequest("getBalance") -> command is "getBalance".
-		// In ViberService.php: $this->sendRequest('createViberMessage', ..., 'post') -> command is "createViberMessage".
-		// If PHP SDK produces "https://app.dataedge.md/api/vcreateViberMessage", that seems wrong.
-		// BUT, if I look at the PHP code again:
-		/*
-		   11:   private $API_URL = "https://app.dataedge.md/api/v";
-		   ...
-		   22:       $url = $this->API_URL . $command;
-		*/
-		// This literally concatenates "https://app.dataedge.md/api/v" and "command".
-		// Maybe the API actually is `https://app.dataedge.md/api/v1/...` for GET and `https://app.dataedge.md/api/v...` for POST?
-		// Or maybe $API_URL usually has a version?
-		// Actually, let's look at `examples/sendsms.php`. It uses `SmsService`. `SmsService` uses defaults.
-		// Wait, if I assume the PHP SDK *works*, then `https://app.dataedge.md/api/v` + `command` MUST be valid.
-		// `https://app.dataedge.md/api/vcreateViberMessage`? That is very strange.
-		// Let me check if there is a `v` param in `sendRequest` for POST.
-		// PHP Line 13: public function sendRequest($command, $params = array(), $method = 'get', $v = 1)
-		// GET uses $v. POST *ignores* $v in line 22.
-		// This implies POST requests might be on a different endpoint structure or I am missing something.
-		// Let's look at `ViberService.php` line 92: `$this->sendRequest('sendQuickViberMessage', $data, 'post', 2);`
-		// It passes `2` as `$v`. But line 22 ignores it!
-		// `https://app.dataedge.md/api/vsendQuickViberMessage` vs `https://app.dataedge.md/api/v2/sendQuickViberMessage`.
-		// If line 22 is indeed `$url = $this->API_URL . $command;`, then `$v` is ignored for POST.
-		// Verification:
-		// 11: private $API_URL = "https://app.dataedge.md/api/v";
-		// 22: $url = $this->API_URL . $command;
-		// Result: "https://app.dataedge.md/api/vsendQuickViberMessage"
-		// This looks like a bug in the PHP SDK, *OR* the API is really weird.
-		// HOWEVER, I should probably try to be "safe" and maybe follow what seems *intended* or widely standard, OR reproduce the PHP behavior exactly if I want to be a "full analog".
-		// But "full analog" usually implies "working analog".
-		// If I look at the GET block: `$this->API_URL . $v . '/' . $command` -> `.../api/v1/getBalance`. This looks standard.
-		// I suspect line 22 in PHP SDK might be buggy or implicit.
-		// checking `sendQuickViberMessage` in PHP SDK uses `post` and `$v=2`.
-		// If the PHP SDK is used in production, maybe that URL IS correct?
-		// Let's assume for a moment that `v` is part of the command? No, "sendQuickViberMessage".
-		// Let's look at `API_URL` again. "https://app.dataedge.md/api/v".
-		// Maybe I should respect the `v` parameter for POST as well, assuming the PHP SDK *meant* to do that, or fix it if it looks broken.
-		// A safe bet is: The PHP SDK code is the source of truth for *how it sends requests*.
-		// BUT, if I see `sendRequest(..., v=2)` in `ViberService`, and the `Client` ignores it, that's a strong smell.
-		// I will implement it such that it *uses* the version for POST as well, because `.../api/v2/method` is a much more likely API design than `.../api/vmethod`.
-		// Wait, `.../api/v` ends with `v`.
-		// If I append `1/command`, I get `.../api/v1/command`.
-		// If I append `command` (line 22), I get `.../api/vcommand`.
-		// I will assume the PHP SDK intended to use the version for POST too, or that `API_URL` for POST is different.
-		// Actually, let's look at the `Client.php` again.
-		// If I really want to be "max safe", I should probably implement it logic-wise similar but fix the obvious path issue if I can confirm it.
-		// For now, I will use the `v` parameter for POST as well, as it seems consistent with the `ViberService` passing `2` explicitly.
-
+		// Note: We include version in URL for consistency, matching GET requests and ViberService requirements.
 		reqURL = fmt.Sprintf("%s%s/%s", c.baseURL, v, command)
 
 		params["token"] = c.token
