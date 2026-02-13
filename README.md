@@ -1,6 +1,11 @@
 # DataEdge Go SDK
 
-This is a Go client library for the [DataEdge](https://dataedge.md) API, providing a full-featured and type-safe interface for SMS and Viber messaging services. It is a port of the official [PHP SDK](https://gitlab.com/dataedgemd/php-sdk).
+Go client for [DataEdge API](https://dataedge.md/).
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/acolev/dataedge-go.svg)](https://pkg.go.dev/github.com/acolev/dataedge-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/acolev/dataedge-go)](https://goreportcard.com/report/github.com/acolev/dataedge-go)
+
+[Русская версия (README_RU.md)](README_RU.md)
 
 ## Installation
 
@@ -8,81 +13,109 @@ This is a Go client library for the [DataEdge](https://dataedge.md) API, providi
 go get github.com/acolev/dataedge-go
 ```
 
-## Usage
-
-### Initialization
+## Quick Start
 
 ```go
 package main
 
 import (
-    "context"
-    "fmt"
-    "github.com/acolev/dataedge-go"
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/acolev/dataedge-go"
 )
 
 func main() {
-    // Initialize client with your default settings
-    client := dataedge.NewClient(
-        "YOUR_API_TOKEN",
-        dataedge.WithAlphaNameID(123),    // Fixed sender ID
-        dataedge.WithViberNameID(456),    // Fixed Viber ID
-        dataedge.WithTranslit(true),      // Enable translit by default
-    )
-    
-    smsService := dataedge.NewSmsService(client)
-    
-    // Very clean API
-    result, err := smsService.SendQuickSms(context.Background(), "Hello World", "373xxxxxxxxx")
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println("SMS Sent:", result)
-    
-    // Check balance
-    balance, err := smsService.GetBalance(context.Background())
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("Balance: %.2f\n", balance)
+	// Initialize client
+	client := dataedge.NewClient("your-api-token",
+		dataedge.WithAlphaNameID(123),  // Default SMS sender ID
+		dataedge.WithViberNameID(456),  // Default Viber sender ID
+	)
+
+	smsService := dataedge.NewSmsService(client)
+
+	// Send a quick SMS
+	res, err := smsService.SendQuickSms(context.Background(), "Hello from Go!", "37360000000")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Result: %v\n", res)
 }
 ```
 
-### Sending SMS
+## Client Configuration
 
+Create a client using `NewClient(token string, opts ...Option)`.
+
+### Options
+- `WithBaseURL(url string)`: Set a custom API base URL.
+- `WithDebug(debug bool)`: Enable debug logging for requests and responses.
+- `WithAlphaNameID(id int)`: Set default sender ID for SMS.
+- `WithViberNameID(id int)`: Set default sender ID for Viber.
+- `WithTranslit(enabled bool)`: Enable/disable auto-transliteration (default is `true`).
+- `WithHTTPClient(client *http.Client)`: Use a custom HTTP client.
+
+---
+
+## SMS Service
+
+Access methods using `dataedge.NewSmsService(client)`.
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `GetBalance(ctx)` | Returns current balance as `float64`. |
+| `GetLimit(ctx)` | Returns current message limit. |
+| `GetAlphaNames(ctx)` | Returns list of available sender names. |
+| `GetAlphaNameID(ctx, name)` | Returns ID for a specific sender name. |
+| `CreateSMSMessage(ctx, text)` | Creates a message template, returns `messageID`. |
+| `SendSms(ctx, messageID, phone)` | Sends a previously created message. |
+| `SendQuickSms(ctx, text, phone)` | Creates and sends SMS in one call. |
+| `CheckSMS(ctx, smsID)` | Checks status of a sent SMS. |
+| `GetMessagesList(ctx)` | Returns history of sent messages. |
+
+---
+
+## Viber Service
+
+Access methods using `dataedge.NewViberService(client)`.
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `CreateViberMessage(ctx, text)` | Creates a Viber template. |
+| `SendViberMessage(ctx, phone, messageID)` | Sends a created Viber message. |
+| `SendQuickViberMessage(ctx, phone, text)` | Sends a quick Viber message. |
+| `SendQuickViberMessageWithImage(...)` | Sends Viber message with image, button, and link. |
+| `SendViberMessageList(ctx, name, listID, schedule, extra)` | Sends message to a predefined list. |
+| `GetViberMessageList(ctx)` | Returns history of Viber messages. |
+
+#### Sending Viber with Image Example
 ```go
-// Send a quick SMS (without creating it first)
-result, err := smsService.SendQuickSms(context.Background(), "Hello World", "373xxxxxxxxx", 0, true)
-if err != nil {
-    panic(err)
-}
-fmt.Println("SMS Sent:", result)
+viberService := dataedge.NewViberService(client)
 
-// Create and Send
-msgID, err := smsService.CreateSMSMessage(context.Background(), "Hello World", 0, true)
-if err != nil {
-    panic(err)
-}
-res, err := smsService.SendSms(context.Background(), msgID, "373xxxxxxxxx")
-```
-
-### Sending Viber Messages
-
-```go
-// Send quick Viber message
-res, err := viberService.SendQuickViberMessage(context.Background(), "373xxxxxxxxx", 123, "Hello Viber")
-
-// Send Viber message with image
-res, err = viberService.SendQuickViberMessageWithImage(
-    context.Background(),
-    "373xxxxxxxxx",
-    123,
-    "Hello with Image",
-    "IMAGE",
-    "/path/to/image.jpg",
-    "Button Text",
-    "https://example.com",
+res, err := viberService.SendQuickViberMessageWithImage(
+    ctx,
+    "37360000000",
+    "Check this out!",
+    "IMAGE",           // Type: MESSAGE or IMAGE
+    "/path/to/img.jpg",
+    "Open Link",       // Button text
+    "https://google.com",
 )
+```
+
+---
+
+## Utilities
+
+### Transliteration
+Auto-transliteration is enabled by default for SMS. You can also use it manually:
+```go
+text := dataedge.Transliterate("Привет мир") // "Privet mir"
 ```
 
 ## Features
