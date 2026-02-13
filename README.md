@@ -128,4 +128,4 @@ text := dataedge.Transliterate("Привет мир") // "Privet mir"
 
 ## License
 
-MIT
+Custom Non-Commercial License (see [LICENSE](LICENSE)). Free for personal and internal use, resale is prohibited.
