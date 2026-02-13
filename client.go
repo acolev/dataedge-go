@@ -109,57 +109,16 @@ func (c *Client) sendRequest(ctx context.Context, method, command string, params
 		v = defaultVersion
 	}
 
-	var reqURL string
-	var body io.Reader
-	var contentType string
-
-	if method == http.MethodGet {
-		u, err := url.Parse(fmt.Sprintf("%s%s/%s", c.baseURL, v, command))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse URL: %w", err)
-		}
-		q := u.Query()
-		q.Set("token", c.token)
-		for k, v := range params {
-			q.Set(k, fmt.Sprintf("%v", v))
-		}
-		u.RawQuery = q.Encode()
-		reqURL = u.String()
-	} else {
-		// POST request
-		// Note: We include version in URL for consistency, matching GET requests and ViberService requirements.
-		reqURL = fmt.Sprintf("%s%s/%s", c.baseURL, v, command)
-
-		params["token"] = c.token
-
-		// Check for multipart (images)
-		if _, ok := params["_multipart_writer"]; ok {
-			// Special handling if we passed a multipart writer (custom logic for Go)
-			// But for a generic request, we usually map map[string]interface{} to fields.
-			// Let's handle multipart separately or detect it.
-			// For this implementation, let's stick to form-urlencoded for standard POST, as PHP uses `http_build_query`.
-			// PHP: `curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));` -> application/x-www-form-urlencoded.
-
-			form := url.Values{}
-			for k, v := range params {
-				form.Set(k, fmt.Sprintf("%v", v))
-			}
-			body = strings.NewReader(form.Encode())
-			contentType = "application/x-www-form-urlencoded"
-		} else {
-			form := url.Values{}
-			for k, v := range params {
-				form.Set(k, fmt.Sprintf("%v", v))
-			}
-			body = strings.NewReader(form.Encode())
-			contentType = "application/x-www-form-urlencoded"
-		}
+	reqURL, err := c.buildURL(method, command, params, v)
+	if err != nil {
+		return nil, err
 	}
 
-	// Handle multipart specifically for Viber image upload if needed later.
-	// The PHP SDK `sendQuickViberMessageWithImage` does manual CURLFile stuff.
-	// We will handle that in the specific service method or a helper, but `sendRequest` generic might need to support it.
-	// For now, let's keep `sendRequest` simple for standard params.
+	var body io.Reader
+	var contentType string
+	if method != http.MethodGet {
+		body, contentType = c.buildPostBody(params, v, command)
+	}
 
 	if c.debug {
 		fmt.Printf("[DEBUG] Request: %s %s\n", method, reqURL)
@@ -193,15 +152,41 @@ func (c *Client) sendRequest(ctx context.Context, method, command string, params
 		fmt.Printf("[DEBUG] Response Body: %s\n", string(respBody))
 	}
 
-	// Check logical error in JSON
+	return c.checkResponse(respBody)
+}
+
+func (c *Client) buildURL(method, command string, params map[string]interface{}, v string) (string, error) {
+	if method == http.MethodGet {
+		u, err := url.Parse(fmt.Sprintf("%s%s/%s", c.baseURL, v, command))
+		if err != nil {
+			return "", fmt.Errorf("failed to parse URL: %w", err)
+		}
+		q := u.Query()
+		q.Set("token", c.token)
+		for k, v := range params {
+			q.Set(k, fmt.Sprintf("%v", v))
+		}
+		u.RawQuery = q.Encode()
+		return u.String(), nil
+	}
+	return fmt.Sprintf("%s%s/%s", c.baseURL, v, command), nil
+}
+
+func (c *Client) buildPostBody(params map[string]interface{}, v, command string) (io.Reader, string) {
+	params["token"] = c.token
+
+	form := url.Values{}
+	for k, v := range params {
+		form.Set(k, fmt.Sprintf("%v", v))
+	}
+	return strings.NewReader(form.Encode()), "application/x-www-form-urlencoded"
+}
+
+func (c *Client) checkResponse(respBody []byte) ([]byte, error) {
 	var errResp APIError
 	if err := json.Unmarshal(respBody, &errResp); err == nil && errResp.Message != "" {
 		return nil, &errResp
 	}
-
-	// Double check if response is false/null which might indicate error in PHP SDK logic,
-	// but here we just return body.
-
 	return respBody, nil
 }
 
